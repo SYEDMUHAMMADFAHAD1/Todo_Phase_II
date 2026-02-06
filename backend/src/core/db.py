@@ -3,9 +3,9 @@ from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.src.core.config import settings
+from .config import settings
 # Import all models so they're registered with SQLModel.metadata before create_all()
-from backend.src.models import User, Task
+from ..models import User, Task
 
 # Create Async Engine
 # echo=True can be helpful for debugging SQL queries during development

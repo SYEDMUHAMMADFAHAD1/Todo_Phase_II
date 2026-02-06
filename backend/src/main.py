@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 import traceback
 import logging
 
-from backend.src.api.routers import tasks, auth
+from .api.routers import tasks, auth
 from backend.src.core.config import settings
 from backend.src.core.db import init_db
 
