@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App - Authentication</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <div class="bg-white p-8 rounded-lg shadow-md">
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">Todo App</h1>
+                <p class="text-gray-600 mt-2">Sign in to your account</p>
+            </div>
+            
+            <form>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2" for="email">
+                        Email
+                    </label>
+                    <input class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="email" type="email" placeholder="you@example.com">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-medium mb-2" for="password">
+                        Password
+                    </label>
+                    <input class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" id="password" type="password" placeholder="••••••••">
+                </div>
+                
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-gray-600 text-sm">
+                    Don't have an account? <a href="#" class="text-blue-600 hover:underline">Sign up</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

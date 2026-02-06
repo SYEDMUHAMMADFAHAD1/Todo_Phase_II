@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlmodel
+asyncpg
+aiosqlite
+python-dotenv
+pyjwt
+cryptography
+passlib[bcrypt]
+email-validator
+pytest
+pytest-cov
+httpx
+pytest-asyncio

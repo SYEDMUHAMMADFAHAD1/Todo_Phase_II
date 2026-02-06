@@ -1,0 +1,196 @@
+openapi: 3.0.3
+info:
+  title: Todo App API (Spec 1)
+  description: Backend API for the Multi-User Todo Application (Pre-Auth Phase)
+  version: 0.1.0
+servers:
+  - url: http://localhost:8000
+    description: Local Development Server
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+
+  /api/{user_id}/tasks:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+          description: "Owner ID (Placeholder for Auth)"
+
+    get:
+      summary: List Tasks
+      description: Retrieve a list of tasks for the specified user.
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskRead'
+        '404':
+          description: User not found (if validated)
+
+    post:
+      summary: Create Task
+      description: Create a new task for the specified user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRead'
+
+  /api/{user_id}/tasks/{task_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Get Task
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRead'
+        '404':
+          description: Task not found
+
+    put:
+      summary: Full Update Task
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRead'
+        '404':
+          description: Task not found
+
+    delete:
+      summary: Delete Task
+      responses:
+        '204':
+          description: Task deleted
+        '404':
+          description: Task not found
+
+  /api/{user_id}/tasks/{task_id}/complete:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    patch:
+      summary: Mark Task Complete
+      responses:
+        '200':
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRead'
+        '404':
+          description: Task not found
+
+components:
+  schemas:
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        is_completed:
+          type: boolean
+          default: false
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        is_completed:
+          type: boolean
+        owner_id:
+          type: string
+          readOnly: true
+
+    TaskRead:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        is_completed:
+          type: boolean
+        owner_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
