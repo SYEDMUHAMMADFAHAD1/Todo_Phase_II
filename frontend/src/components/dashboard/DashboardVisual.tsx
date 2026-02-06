@@ -17,7 +17,7 @@ const DashboardVisual = () => {
   const [isMobile, setIsMobile] = useState(false);
   
   // Generate initial task items using useMemo to avoid impure function calls during render
-  const initialTasks = useMemo(() => [
+  const initialTasks = useMemo((): TaskItem[] => [
     { id: '1', title: 'Review project proposal', status: 'pending', progress: 0, createdAt: new Date() },
     { id: '2', title: 'Update documentation', status: 'in-progress', progress: 60, createdAt: new Date() },
     { id: '3', title: 'Fix authentication bug', status: 'completed', progress: 100, createdAt: new Date() },
