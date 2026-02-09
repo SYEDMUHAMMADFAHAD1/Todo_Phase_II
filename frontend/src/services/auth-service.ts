@@ -2,7 +2,8 @@ import { LoginCredentials, RegisterCredentials, AuthResponse, ApiError, User } f
 import { sessionStorage } from '@/lib/session';
 
 // Use the same base URL as the API client
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api').replace(/\/$/, '');
+// Remove /api suffix since we'll add it with basePath
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
 export class AuthService {
   private basePath = '/auth';

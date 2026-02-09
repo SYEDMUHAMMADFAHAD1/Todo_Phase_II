@@ -1,0 +1,33 @@
+frontend:
+  replicaCount: 2
+  image:
+    repository: todo-frontend
+    tag: v1.0.0
+  service:
+    type: NodePort
+    port: 80
+
+backend:
+  replicaCount: 1
+  image:
+    repository: todo-backend
+    tag: v1.0.0
+  service:
+    type: ClusterIP
+    port: 8000
+
+resources:
+  frontend:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  backend:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi

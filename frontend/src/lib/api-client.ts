@@ -34,10 +34,10 @@ class ApiClient {
     // If using relative URLs (empty baseUrl), don't add the baseUrl
     const url = this.baseUrl ? `${this.baseUrl}/api${endpoint}` : `/api${endpoint}`;
 
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
-    } as Record<string, string>;
+    };
 
     // Add auth token if available
     const token = await getAuthToken();
@@ -55,7 +55,19 @@ class ApiClient {
       throw new Error(errorData.detail || `HTTP error! Status: ${response.status}`);
     }
 
-    return response.json();
+    // Handle 204 No Content responses (e.g., DELETE operations)
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return {} as T;
+    }
+
+    // Check if response has JSON content type
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    }
+
+    // If no content or non-JSON response, return empty object
+    return {} as T;
   }
 
   async get<T>(endpoint: string): Promise<T> {

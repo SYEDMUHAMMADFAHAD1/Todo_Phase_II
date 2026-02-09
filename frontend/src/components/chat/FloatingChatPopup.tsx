@@ -96,30 +96,12 @@ const FloatingChatPopup: React.FC<FloatingChatPopupProps> = ({ onClose }) => {
     setShowSuggestions(false); // Hide suggestions once conversation starts
 
     try {
-      // Check if this is a task creation request
+      // Send ALL messages to the backend API for intelligent processing
+      // The backend AI will handle task operations and natural language understanding
       const userMessageContent = inputValue.toLowerCase();
-      if (userMessageContent.includes('add') || userMessageContent.includes('create') || userMessageContent.includes('new task')) {
-        // Extract task title from the message
-        const taskMatch = inputValue.match(/(?:add|create|new task)[:\-\s]*(.*)/i);
-        const extractedTaskTitle = taskMatch ? taskMatch[1].trim() : "New Task";
 
-        // Set the task title in the context
-        setTaskTitle(extractedTaskTitle);
-        setTaskDescription('');
-
-        // Show the calendar picker UI
-        setShowCalendarPicker(true);
-
-        // Inform the user that they need to select date/time
-        const aiMessage: Message = {
-          id: nanoid(),
-          role: 'assistant',
-          content: `Sure! I'll help you create "${extractedTaskTitle}". Please select the date and time using the calendar picker that has appeared on the dashboard.`,
-          timestamp: new Date(),
-        };
-
-        setMessages(prev => [...prev, aiMessage]);
-      } else if (pendingUpdateTask) {
+      // Check if there's a pending update task (user is providing new value)
+      if (pendingUpdateTask) {
         // Handle pending task update - user is providing the new value
         const taskId = pendingUpdateTask.taskId;
         const fieldToUpdate = pendingUpdateTask.field;
@@ -173,155 +155,6 @@ const FloatingChatPopup: React.FC<FloatingChatPopupProps> = ({ onClose }) => {
           setMessages(prev => [...prev, aiMessage]);
           setPendingUpdateTask(null);
         }
-      } else if (userMessageContent.includes('edit') || userMessageContent.includes('update') || userMessageContent.includes('change') || userMessageContent.includes('modify')) {
-        // Handle task update request
-        let targetTask = null;
-
-        // Strategy 1: Try to find task by matching title keywords in the message
-        // Extract potential task title from common patterns like "edit task X" or "update X"
-        const taskTitleMatch = inputValue.match(/(?:edit|update|change|modify)\s+(?:task\s+)?(?:"|')?(.+?)(?:"|')?\s*(?:to|not|from|with)?/i);
-        if (taskTitleMatch) {
-          const potentialTitle = taskTitleMatch[1].trim().toLowerCase();
-          targetTask = todo.todos.find(t =>
-            t.title.toLowerCase().includes(potentialTitle) ||
-            potentialTitle.includes(t.title.toLowerCase())
-          );
-        }
-
-        // Strategy 2: If not found, try matching against all words in the message
-        if (!targetTask) {
-          const words = inputValue.split(/\s+/).filter(w => w.length > 3);
-          for (const word of words) {
-            const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-            const foundTask = todo.todos.find(t =>
-              t.title.toLowerCase().includes(cleanWord) ||
-              (t.description && t.description.toLowerCase().includes(cleanWord))
-            );
-            if (foundTask) {
-              targetTask = foundTask;
-              break;
-            }
-          }
-        }
-
-        // Strategy 3: If still not found, check for "last" or "recent" keywords
-        if (!targetTask && (userMessageContent.includes('last') || userMessageContent.includes('recent') || userMessageContent.includes('previous'))) {
-          const incompleteTasks = todo.todos.filter(t => !t.is_completed);
-          if (incompleteTasks.length > 0) {
-            targetTask = incompleteTasks[incompleteTasks.length - 1];
-          }
-        }
-
-        // Strategy 4: Default to most recent pending task
-        if (!targetTask && todo.todos.length > 0) {
-          const incompleteTasks = todo.todos.filter(t => !t.is_completed);
-          if (incompleteTasks.length > 0) {
-            targetTask = incompleteTasks[incompleteTasks.length - 1];
-          } else {
-            targetTask = todo.todos[todo.todos.length - 1];
-          }
-        }
-
-        if (targetTask) {
-          // Determine what field to update and extract the new value
-          let fieldToUpdate = 'title'; // Default
-          let newValue = '';
-
-          // Check if updating date/time
-          if (userMessageContent.includes('date') || userMessageContent.includes('time') || userMessageContent.includes('when')) {
-            fieldToUpdate = 'date_time';
-            setTaskTitle(targetTask.title);
-            setTaskDescription(targetTask.description || '');
-            setShowCalendarPicker(true);
-
-            const aiMessage: Message = {
-              id: nanoid(),
-              role: 'assistant',
-              content: `Got it 👍\n\nI'll help you update the date and time for **"${targetTask.title}"**.\n\nPlease select the new date and time using the calendar picker that just appeared on the dashboard.`,
-              timestamp: new Date(),
-            };
-            setMessages(prev => [...prev, aiMessage]);
-            return; // Exit early
-          }
-
-          // Check if updating description
-          if (userMessageContent.includes('description') || userMessageContent.includes('desc') || userMessageContent.includes('details')) {
-            fieldToUpdate = 'description';
-          }
-
-          // Extract new value using various patterns
-          // Pattern 1: "edit X to Y" or "change X to Y"
-          const toPattern = inputValue.match(/(?:to|into)\s+["']?([^"']+)["']?$/i);
-          if (toPattern) {
-            newValue = toPattern[1].trim();
-          }
-
-          // Pattern 2: "edit X not Y" (detect "not" keyword as separator)
-          if (!newValue) {
-            const notPattern = inputValue.match(/not\s+(.+)$/i);
-            if (notPattern) {
-              newValue = notPattern[1].trim();
-            }
-          }
-
-          // Pattern 3: Extract everything after task title
-          if (!newValue) {
-            const taskTitleInMsg = targetTask.title.toLowerCase();
-            const msgLower = inputValue.toLowerCase();
-            const titleIndex = msgLower.indexOf(taskTitleInMsg);
-            if (titleIndex !== -1) {
-              const afterTitle = inputValue.substring(titleIndex + targetTask.title.length).trim();
-              // Remove common words
-              newValue = afterTitle.replace(/^(to|into|not|with)\s+/i, '').trim();
-            }
-          }
-
-          // If we extracted a new value, update the task
-          if (newValue && newValue.length > 0) {
-            try {
-              let updateData: any = {};
-              updateData[fieldToUpdate] = newValue;
-
-              await todo.updateTodo(targetTask.id, updateData);
-
-              const oldValue = fieldToUpdate === 'title' ? targetTask.title : (targetTask.description || 'none');
-              const aiMessage: Message = {
-                id: nanoid(),
-                role: 'assistant',
-                content: `Got it 👍\n\nI've updated your task **"${targetTask.title}"** ${fieldToUpdate === 'title' ? 'title' : 'description'} from **"${oldValue}"** to **"${newValue}"**.\n\nWant to change the date or time as well?`,
-                timestamp: new Date(),
-              };
-              setMessages(prev => [...prev, aiMessage]);
-            } catch (updateErr) {
-              const aiMessage: Message = {
-                id: nanoid(),
-                role: 'assistant',
-                content: `Oops! I had trouble updating your task. The error was: ${updateErr instanceof Error ? updateErr.message : 'Unknown error'}.\n\nPlease try again or let me know if you need help.`,
-                timestamp: new Date(),
-              };
-              setMessages(prev => [...prev, aiMessage]);
-            }
-          } else {
-            // Need clarification from user
-            setPendingUpdateTask({ taskId: targetTask.id, field: fieldToUpdate });
-
-            const aiMessage: Message = {
-              id: nanoid(),
-              role: 'assistant',
-              content: `I found the task **"${targetTask.title}"**.\n\nWhat would you like to change the ${fieldToUpdate === 'title' ? 'title' : 'description'} to?`,
-              timestamp: new Date(),
-            };
-            setMessages(prev => [...prev, aiMessage]);
-          }
-        } else {
-          const aiMessage: Message = {
-            id: nanoid(),
-            role: 'assistant',
-            content: "Hmm, I couldn't find the task you want to update.\n\nCould you please tell me more about which task you'd like to edit? You can mention:\n- The task title\n- Or say 'last task' or 'recent task'",
-            timestamp: new Date(),
-          };
-          setMessages(prev => [...prev, aiMessage]);
-        }
       } else {
         // Send the message to our backend API for general chat
         // Simulate thinking time for more human-like interaction
@@ -348,6 +181,19 @@ const FloatingChatPopup: React.FC<FloatingChatPopupProps> = ({ onClose }) => {
         };
 
         setMessages(prev => [...prev, aiMessage]);
+
+        // Refresh todo list after chatbot operations to show updates
+        // Check if the response indicates a task operation was performed
+        const responseText = response.response.toLowerCase();
+        if (responseText.includes('added') ||
+            responseText.includes('updated') ||
+            responseText.includes('deleted') ||
+            responseText.includes('removed') ||
+            responseText.includes('marked') ||
+            responseText.includes('completed')) {
+          // Refresh the todo list to reflect changes
+          await todo.refetch();
+        }
       }
     } catch (err: any) {
       // Handle common tasks without backend if API fails

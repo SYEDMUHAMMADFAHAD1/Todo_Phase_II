@@ -8,6 +8,8 @@ pyjwt
 cryptography
 passlib[bcrypt]
 email-validator
+pydantic-settings
+mcp
 pytest
 pytest-cov
 httpx

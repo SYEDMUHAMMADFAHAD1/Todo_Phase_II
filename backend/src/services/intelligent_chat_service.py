@@ -199,9 +199,9 @@ class IntelligentChatService:
         if any(phrase in message for phrase in [
             "update", "change", "edit", "modify", "rename"
         ]):
-            task_title = self._extract_task_title_from_message(message)
-            new_title = self._extract_new_title(message)
-            return {"type": "update_task", "task_title": task_title, "new_title": new_title}
+            # Extract both old and new titles from the message
+            old_title, new_title = self._extract_update_details(message)
+            return {"type": "update_task", "task_title": old_title, "new_title": new_title}
 
         # Add task patterns - very flexible
         if any(phrase in message for phrase in [
@@ -284,6 +284,37 @@ class IntelligentChatService:
                 return match.group(1).strip()
 
         return ""
+
+    def _extract_update_details(self, message: str) -> tuple[str, str]:
+        """
+        Extract both old and new task titles from update messages.
+
+        Examples:
+        - "change buy groceries to buy milk" -> ("buy groceries", "buy milk")
+        - "update shopping to cleaning" -> ("shopping", "cleaning")
+        - "rename workout task to gym session" -> ("workout task", "gym session")
+        """
+
+        # Pattern 1: "change/update/rename X to Y"
+        patterns = [
+            r"(?:change|update|rename|edit|modify)\s+(?:task\s+)?['\"]?(.+?)['\"]?\s+(?:to|into)\s+['\"]?(.+?)['\"]?$",
+            r"(?:change|update|rename)\s+['\"]?(.+?)['\"]?\s+(?:to|into)\s+['\"]?(.+)['\"]?",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, message, re.IGNORECASE)
+            if match:
+                old_title = match.group(1).strip()
+                new_title = match.group(2).strip()
+
+                # Clean up common words
+                old_title = re.sub(r'^(task|my|the|a|an)\s+', '', old_title, flags=re.IGNORECASE)
+                new_title = re.sub(r'\s+(please|pls|plz|thanks|thank you)$', '', new_title, flags=re.IGNORECASE)
+
+                return (old_title, new_title)
+
+        # If no clear pattern, return empty strings
+        return ("", "")
 
     async def _handle_list_tasks(self, intent: Dict, user_id: str) -> str:
         """Handle task listing with friendly response."""
@@ -431,9 +462,54 @@ class IntelligentChatService:
             return "Oops, I had trouble marking that as complete. Could you try again?"
 
     async def _handle_update_task(self, intent: Dict, user_id: str) -> str:
-        """Handle task updates."""
-        # Implementation for updating tasks
-        return "Task updating feature is coming soon! For now, you can delete the old task and add a new one. 😊"
+        """Handle task updates with friendly response."""
+        try:
+            task_title = intent.get("task_title", "").strip()
+            new_title = intent.get("new_title", "").strip()
+
+            if not task_title:
+                return "Sure! Which task would you like to update? 🤔"
+
+            if not new_title:
+                return "What would you like to change it to? 😊"
+
+            # Find task by title (case-insensitive partial match)
+            query = select(Task).where(
+                Task.user_id == user_id,
+                Task.title.ilike(f"%{task_title}%")
+            )
+            result = await self.db.execute(query)
+            task = result.scalar_one_or_none()
+
+            if not task:
+                # Try broader match
+                query = select(Task).where(
+                    Task.user_id == user_id
+                )
+                result = await self.db.execute(query)
+                tasks = result.scalars().all()
+
+                # Find best match
+                for t in tasks:
+                    if task_title.lower() in t.title.lower() or t.title.lower() in task_title.lower():
+                        task = t
+                        break
+
+                if not task:
+                    return f"I couldn't find a task matching **{task_title}**. Want me to show you all your tasks?"
+
+            # Update the task
+            old_title = task.title
+            task.title = new_title
+            task.updated_at = datetime.utcnow()
+            await self.db.commit()
+            await self.db.refresh(task)
+
+            return f"Updated! ✏️ I've changed **{old_title}** to **{new_title}**. Anything else you need?"
+
+        except Exception as e:
+            logger.error(f"Error updating task: {e}", exc_info=True)
+            return "Hmm, I ran into an issue updating that task. Mind trying again?"
 
     def _get_greeting_response(self, message: str) -> str:
         """Get friendly greeting response."""

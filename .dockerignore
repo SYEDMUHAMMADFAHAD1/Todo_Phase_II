@@ -1,0 +1,62 @@
+# Dependencies
+**/node_modules
+**/.pnpm-store
+
+# Build outputs
+**/.next
+**/dist
+**/build
+**/__pycache__
+**/*.pyc
+
+# Databases
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Environment files
+**/.env.local
+**/.env*.local
+
+# Logs
+**/*.log
+
+# Test and coverage
+**/coverage
+**/.pytest_cache
+**/htmlcov
+
+# Documentation (keep minimal)
+**/*.md
+!README.md
+
+# Other
+**/.DS_Store
+**/Thumbs.db
+**/*.swp
+**/*.swo
+
+# Helm chart (not needed for Docker build)
+todo-chatbot
+
+# Kubernetes configs
+*.yaml
+!docker-compose.yaml
+
+# Executables
+*.exe
+*.zip
+
+# Spec directories
+.specify
+.qwen
+specs
+history
