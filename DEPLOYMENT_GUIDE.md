@@ -1,6 +1,6 @@
 # Deployment Guide for Todo Application Backend
 
-This document explains how to deploy the Todo application backend on Railway.
+This document explains how to deploy the Todo application backend on various platforms.
 
 ## Overview
 
@@ -59,17 +59,41 @@ Or use the start script method:
    ```
 2. This will use the `start_server.py` script in the root directory
 
+## Deployment using Nixpacks
+
+The application also supports deployment using Nixpacks. A `nixpacks.toml` file is included in the root directory with the following configuration:
+
+```toml
+[build]
+builder = "NIXPACKS"
+buildCommand = "cd backend && pip install -r requirements.txt"
+
+[phases.setup]
+nixPkgs = ["python313", "pip", "nodejs"]
+
+[phases.build]
+cmds = ["cd backend && pip install -r requirements.txt"]
+
+[phases.start]
+cmd = "cd backend && uvicorn src.main:app --host=0.0.0.0 --port $PORT"
+
+[variables]
+PYTHON_VERSION = "3.13"
+```
+
+Platforms that support Nixpacks (such as Render, Fly.io, or other cloud providers) will automatically use this configuration.
+
 ### Troubleshooting
 
 #### Common Issues:
 
 1. **Import errors**: Make sure you're in the backend directory when importing modules
-2. **Port binding**: The application will use the PORT environment variable provided by Railway
+2. **Port binding**: The application will use the PORT environment variable provided by the hosting platform
 3. **Database connection**: Ensure DATABASE_URL is properly configured for production databases
 
 #### Checking Logs:
 
-View application logs in the Railway dashboard to troubleshoot startup issues.
+View application logs in the dashboard of your hosting platform to troubleshoot startup issues.
 
 ### Health Check
 
