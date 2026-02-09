@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import TaskCard from '@/components/dashboard/TaskCard';
 import Skeleton from '@/components/common/Skeleton';
 import { Todo, TodoUpdateInput, UseTodoReturn } from '@/hooks/todo';
+import TodoFormWithUpdate from '@/components/todo/TodoFormWithUpdate';
 
 interface TodoListProps {
   todo: UseTodoReturn;
@@ -14,12 +15,17 @@ type FilterType = 'all' | 'pending' | 'completed';
 export default function TodoList({ todo }: TodoListProps) {
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
+  const [editingTask, setEditingTask] = useState<Todo | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
 
   const handleUpdate = async (id: string, input: TodoUpdateInput) => {
     try {
       setUpdatingIds((prev) => new Set([...prev, id]));
       await todo.updateTodo(id, input);
+      // Only close the edit form if we're in edit mode
+      if (editingTask) {
+        setEditingTask(null);
+      }
     } finally {
       setUpdatingIds((prev) => {
         const newSet = new Set(prev);
@@ -27,6 +33,10 @@ export default function TodoList({ todo }: TodoListProps) {
         return newSet;
       });
     }
+  };
+
+  const startEditingTask = (task: Todo) => {
+    setEditingTask(task);
   };
 
   const handleDelete = async (id: string) => {
@@ -152,6 +162,27 @@ export default function TodoList({ todo }: TodoListProps) {
             {filter !== 'all' && 'Switch filters to see other tasks'}
           </p>
         </div>
+      ) : editingTask ? (
+        // Show the edit form when a task is being edited
+        <TodoFormWithUpdate
+          onCreate={async (data) => {
+            // This shouldn't be called in edit mode, but just in case
+            await todo.createTodo(data);
+          }}
+          onUpdate={async (id, data) => {
+            await handleUpdate(id, data);
+          }}
+          taskToEdit={{
+            id: editingTask.id,
+            title: editingTask.title,
+            description: editingTask.description,
+            dateTime: editingTask.date_time,
+          }}
+          onSuccess={() => {
+            todo.refetch();
+            setEditingTask(null);
+          }}
+        />
       ) : (
         <div className="space-y-4">
           {/* Pending todos */}
@@ -167,6 +198,7 @@ export default function TodoList({ todo }: TodoListProps) {
                   onUpdate={handleUpdate}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
+                  onEdit={startEditingTask}
                   isDeleting={deletingIds.has(t.id)}
                   isUpdating={updatingIds.has(t.id)}
                 />
@@ -194,6 +226,7 @@ export default function TodoList({ todo }: TodoListProps) {
                   onUpdate={handleUpdate}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
+                  onEdit={startEditingTask}
                   isDeleting={deletingIds.has(t.id)}
                   isUpdating={updatingIds.has(t.id)}
                 />

@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  title: Chat API
+  description: Stateless chat API for the Todo Web Application
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.todoapp.com
+    description: Production server
+
+paths:
+  /api/{user_id}/chat:
+    post:
+      summary: Send a message to the chatbot and receive a response
+      description: Creates a new conversation if none exists, or appends to existing conversation. Returns the AI assistant's response.
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: The ID of the user sending the message
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: The user's message to send to the chatbot
+                conversation_id:
+                  type: string
+                  description: Optional. ID of existing conversation to continue. If omitted, a new conversation is created.
+      responses:
+        '200':
+          description: Successfully received AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - conversation_id
+                  - response
+                  - message_id
+                properties:
+                  conversation_id:
+                    type: string
+                    description: The ID of the conversation
+                  response:
+                    type: string
+                    description: The AI assistant's response
+                  message_id:
+                    type: string
+                    description: The ID of the response message
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '403':
+          description: Forbidden - User does not have access to the specified conversation
+        '500':
+          description: Internal server error
+      security:
+        - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

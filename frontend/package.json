@@ -9,9 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@chatscope/chat-ui-kit-react": "^2.1.1",
+    "@chatscope/chat-ui-kit-styles": "^1.4.0",
     "axios": "^1.13.2",
     "better-auth": "^1.4.13",
-    "framer-motion": "^12.31.3",
+    "framer-motion": "^12.33.0",
+    "lucide-react": "^0.563.0",
+    "nanoid": "^5.1.6",
     "next": "16.1.2",
     "react": "19.2.3",
     "react-dom": "19.2.3"

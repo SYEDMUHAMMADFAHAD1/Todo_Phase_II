@@ -1,141 +1,152 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
-import { ApiError } from '@/types/auth';
+import { getAuthToken } from '@/lib/auth-utils';
+import { nanoid } from 'nanoid';
 
-// Custom Error class that extends Error so instanceof Error works
-export class ApiErrorClass extends Error {
-  public statusCode: number;
-  public errors?: Record<string, string[]>;
-
-  constructor(message: string, statusCode: number, errors?: Record<string, string[]>) {
-    super(message);
-    this.statusCode = statusCode;
-    this.errors = errors;
-    this.name = 'ApiError';
-    Object.setPrototypeOf(this, ApiErrorClass.prototype);
-  }
+interface ChatResponse {
+  conversation_id: string;
+  response: string;
+  message_id: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 class ApiClient {
-  private client: AxiosInstance;
+  private baseUrl: string;
 
   constructor() {
-    this.client = axios.create({
-      baseURL: API_BASE_URL,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Removed withCredentials: true since we're using JWT tokens in Authorization header
-      // The authentication is handled via JWT tokens stored in localStorage
+    // Use relative URLs to leverage Next.js rewrites when NEXT_PUBLIC_USE_REWRITE_PROXY is set
+    if (process.env.NEXT_PUBLIC_USE_REWRITE_PROXY === 'true') {
+      this.baseUrl = '';
+    } else {
+      this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    // Add the API version prefix to all requests
+    // If using relative URLs (empty baseUrl), don't add the baseUrl
+    const url = this.baseUrl ? `${this.baseUrl}/api${endpoint}` : `/api${endpoint}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> || {}),
+    };
+
+    // Add auth token if available
+    const token = await getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
     });
 
-    this.setupInterceptors();
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP error! Status: ${response.status}`);
+    }
+
+    return response.json();
   }
 
-  private setupInterceptors() {
-    // Request interceptor to add auth token
-    this.client.interceptors.request.use(
-      (config) => {
-        // Always check localStorage fresh before each request
-        const token = localStorage.getItem('todo_app_token');
+  async get<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'GET'
+    });
+  }
 
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-          console.log('🔐 Authorization header attached:', { token: token.slice(0, 20) + '...' });
-        } else {
-          console.warn('⚠️ No token found in localStorage');
+  async post<T>(endpoint: string, data: any): Promise<T> {
+    // Format date fields before sending to backend
+    const formattedData = this.formatDatesForBackend(data);
+    
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(formattedData),
+    });
+  }
+
+  async put<T>(endpoint: string, data: any): Promise<T> {
+    // Format date fields before sending to backend
+    const formattedData = this.formatDatesForBackend(data);
+
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(formattedData),
+    });
+  }
+
+  async delete<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+    });
+  }
+
+  private formatDatesForBackend(obj: any): any {
+    if (obj === null || obj === undefined) {
+      return obj;
+    }
+
+    if (obj instanceof Date) {
+      // Format date to ISO string for backend
+      return obj.toISOString();
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.formatDatesForBackend(item));
+    }
+
+    if (typeof obj === 'object') {
+      const formattedObj: any = {};
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (key === 'dateTime' || key === 'date_time') {
+            // Specifically handle date and time fields
+            if (obj[key] instanceof Date) {
+              formattedObj[key] = obj[key].toISOString();
+            } else {
+              formattedObj[key] = obj[key];
+            }
+          } else {
+            formattedObj[key] = this.formatDatesForBackend(obj[key]);
+          }
         }
-
-        return config;
-      },
-      (error) => {
-        console.error('Request interceptor error:', error);
-        return Promise.reject(error);
       }
+      return formattedObj;
+    }
+
+    return obj;
+  }
+
+  async sendChatMessage(
+    userId: string,
+    message: string,
+    conversationId?: string
+  ): Promise<ChatResponse> {
+    const body = {
+      message,
+      ...(conversationId && { conversation_id: conversationId }),
+    };
+
+    return this.request<ChatResponse>(`/${userId}/chat`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getConversationHistory(userId: string, conversationId: string): Promise<{ conversation_id: string; messages: Message[] }> {
+    return this.request<{ conversation_id: string; messages: Message[] }>(
+      `/${userId}/conversations/${conversationId}/messages`,
+      { method: 'GET' }
     );
-
-    // Response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => response,
-      (error: AxiosError) => {
-        const data = error.response?.data as any;
-        const statusCode = error.response?.status || 500;
-        const message = data?.detail || error.message || 'An unknown error occurred';
-
-        console.error('API Error:', statusCode, message, data);
-
-        // Handle 401 Unauthorized (token expired or invalid)
-        if (statusCode === 401) {
-          localStorage.removeItem('todo_app_token');
-          window.location.href = '/signin';
-        }
-
-        // Throw proper Error object so instanceof Error works
-        const apiErrorObj = new ApiErrorClass(message, statusCode, data?.errors);
-        return Promise.reject(apiErrorObj);
-      }
-    );
-  }
-
-  public async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    try {
-      const response = await this.client.get<T>(url, config);
-      return response.data;
-    } catch (error) {
-      console.error(`GET request failed to ${url}:`, error);
-      throw error;
-    }
-  }
-
-  public async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    try {
-      const response = await this.client.post<T>(url, data, config);
-      return response.data;
-    } catch (error) {
-      console.error(`POST request failed to ${url}:`, error);
-      throw error;
-    }
-  }
-
-  public async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    try {
-      const response = await this.client.put<T>(url, data, config);
-      return response.data;
-    } catch (error) {
-      console.error(`PUT request failed to ${url}:`, error);
-      throw error;
-    }
-  }
-
-  public async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    try {
-      const response = await this.client.patch<T>(url, data, config);
-      return response.data;
-    } catch (error) {
-      console.error(`PATCH request failed to ${url}:`, error);
-      throw error;
-    }
-  }
-
-  public async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    try {
-      const response = await this.client.delete<T>(url, config);
-      return response.data;
-    } catch (error) {
-      console.error(`DELETE request failed to ${url}:`, error);
-      throw error;
-    }
-  }
-
-  public setAuthToken(token: string) {
-    localStorage.setItem('todo_app_token', token);
-    this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  }
-
-  public clearAuthToken() {
-    localStorage.removeItem('todo_app_token');
-    delete this.client.defaults.headers.common['Authorization'];
   }
 }
 

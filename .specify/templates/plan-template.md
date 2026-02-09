@@ -31,11 +31,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-1. **Spec-Driven Development Compliance**: All implementation must be based on specifications; no manual coding allowed without spec updates
-2. **Correctness & Security**: Correctness-first behavior with security-by-design (strict user isolation, no cross-user data access)
-3. **Separation of Concerns**: Clear separation between Frontend (Next.js), Backend (FastAPI), Auth (Better Auth), and Data (Neon Postgres)
-4. **Production-Grade**: Architecture must be suitable for real users (no in-memory only storage, proper error handling)
-5. **Test-First Approach**: TDD mandatory - tests must be written before implementation
+[Gates determined based on constitution file]
 
 ## Project Structure
 

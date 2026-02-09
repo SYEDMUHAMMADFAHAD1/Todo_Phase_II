@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: MCP Task Tools API
+  description: API contracts for MCP task management tools
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+
+paths:
+  /mcp/add_task:
+    post:
+      summary: Add a new task
+      description: Creates a new task for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+              properties:
+                title:
+                  type: string
+                  description: The title of the task
+                  maxLength: 255
+                description:
+                  type: string
+                  description: Optional description of the task
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - task_id
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the operation was successful
+                  task_id:
+                    type: string
+                    description: The ID of the created task
+                  error:
+                    type: string
+                    description: Error message if the operation failed
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '500':
+          description: Internal server error
+      security:
+        - BearerAuth: []
+
+  /mcp/list_tasks:
+    post:
+      summary: List tasks for a user
+      description: Retrieves tasks for the authenticated user with optional filtering
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: string
+                  enum: [all, pending, completed]
+                  description: Filter for task status
+      responses:
+        '200':
+          description: Tasks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - tasks
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the operation was successful
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  error:
+                    type: string
+                    description: Error message if the operation failed
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '500':
+          description: Internal server error
+      security:
+        - BearerAuth: []
+
+  /mcp/update_task:
+    post:
+      summary: Update a task
+      description: Updates the title and/or description of a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task_id
+              properties:
+                task_id:
+                  type: string
+                  description: The ID of the task to update
+                title:
+                  type: string
+                  description: New title for the task
+                  maxLength: 255
+                description:
+                  type: string
+                  description: New description for the task
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the operation was successful
+                  task:
+                    $ref: '#/components/schemas/Task'
+                  error:
+                    type: string
+                    description: Error message if the operation failed
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '404':
+          description: Task not found or not owned by user
+        '500':
+          description: Internal server error
+      security:
+        - BearerAuth: []
+
+  /mcp/complete_task:
+    post:
+      summary: Mark a task as completed
+      description: Marks a task as completed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task_id
+              properties:
+                task_id:
+                  type: string
+                  description: The ID of the task to mark as completed
+      responses:
+        '200':
+          description: Task completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the operation was successful
+                  task:
+                    $ref: '#/components/schemas/Task'
+                  error:
+                    type: string
+                    description: Error message if the operation failed
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '404':
+          description: Task not found or not owned by user
+        '500':
+          description: Internal server error
+      security:
+        - BearerAuth: []
+
+  /mcp/delete_task:
+    post:
+      summary: Delete a task
+      description: Deletes a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - task_id
+              properties:
+                task_id:
+                  type: string
+                  description: The ID of the task to delete
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the operation was successful
+                  error:
+                    type: string
+                    description: Error message if the operation failed
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+        '404':
+          description: Task not found or not owned by user
+        '500':
+          description: Internal server error
+      security:
+        - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - is_completed
+        - user_id
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the task
+        title:
+          type: string
+          description: The task title
+          maxLength: 255
+        description:
+          type: string
+          description: Detailed description of the task
+        is_completed:
+          type: boolean
+          description: Whether the task has been completed
+        user_id:
+          type: string
+          description: ID of the user who owns this task
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the task was last updated

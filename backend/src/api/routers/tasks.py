@@ -4,10 +4,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.auth import UserIdentity, get_current_user
-from backend.src.core.db import get_session
-from backend.src.models.task import TaskRead, TaskCreate, TaskUpdate
-from backend.src.services.task_service import TaskService
+from auth import UserIdentity, get_current_user
+from ...core.db import get_session
+from ...models.task import TaskRead, TaskCreate, TaskUpdate
+from ...services.task_service import TaskService
 
 # Configure logger
 logger = logging.getLogger(__name__)

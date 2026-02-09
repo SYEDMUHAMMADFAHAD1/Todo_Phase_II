@@ -1,4 +1,4 @@
-﻿# Claude Code Rules
+# Claude Code Rules
 
 This file is generated during init for the selected agent.
 
@@ -208,36 +208,3 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
-
-## Phase II: Todo Full-Stack Web Application
-
-### Agent Strategy
-- **Authentication**: Use `secure-auth-specialist` for user signup, signin, password hashing, JWT tokens, and Better Auth integration.
-- **Frontend**: Use `frontend-architect` for Next.js 16+ App Router, Tailwind CSS, and UI components.
-- **Database**: Use `neon-postgres-architect` for Neon Serverless PostgreSQL, schema design, and migrations.
-- **Backend**: Use `fastapi-backend-dev` for FastAPI, SQLModel, REST endpoints, and backend logic.
-
-### Project Requirements
-**Objective:** Transform the console app into a modern multi-user web application with persistent storage using the Agentic Dev Stack workflow (Spec → Plan → Tasks → Implement).
-
-**Core Requirements:**
-1. **Web Transition**: Implement all 5 Basic Level features as a web application.
-2. **API**: Create RESTful API endpoints.
-3. **UI**: Build responsive frontend interface.
-4. **Persistence**: Store data in Neon Serverless PostgreSQL database.
-5. **Auth**: Implement user signup/signin using Better Auth.
-
-### Technology Stack
-- **Frontend**: Next.js 16+ (App Router)
-- **Backend**: Python FastAPI
-- **ORM**: SQLModel
-- **Database**: Neon Serverless PostgreSQL
-- **Spec-Driven**: Claude Code + Spec-Kit Plus
-- **Authentication**: Better Auth
-
-### Authentication Flow (Better Auth)
-- **Login**: User logs in on Frontend → Better Auth creates session & issues JWT token.
-- **Request**: Frontend includes JWT in `Authorization: Bearer <token>` header.
-- **Verification**: Backend verifies signature using shared secret.
-- **Identification**: Backend decodes token to identify user.
-- **Authorization**: Backend filters data to return only tasks belonging to the authenticated user.

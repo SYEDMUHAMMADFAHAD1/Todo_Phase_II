@@ -1,71 +1,81 @@
-<!--
-Sync Impact Report:
-Version change: 3.0.0 -> 3.0.1 (Phase III Specification Alignment)
-Modified principles: Enhanced AI Agent Principles with MCP constraints
-Added sections: MCP Tool Requirements, Stateless Architecture Constraints
-Removed sections: None
-Templates requiring updates:
-- .specify/templates/plan-template.md ✅ updated
-- .specify/templates/tasks-template.md ✅ updated
-- .specify/templates/spec-template.md ✅ validated (generic compliance)
-- README.md ✅ updated
-Follow-up TODOs: None
+<!-- Sync Impact Report:
+  - Version change: N/A → 1.0.0
+  - Modified principles: N/A (new constitution)
+  - Added sections: Core Principles (6), Additional Constraints, Development Workflow
+  - Removed sections: N/A
+  - Templates requiring updates: 
+    - .specify/templates/plan-template.md ✅ updated
+    - .specify/templates/spec-template.md ✅ updated  
+    - .specify/templates/tasks-template.md ✅ updated
+    - .specify/templates/commands/*.md ✅ reviewed
+  - Follow-up TODOs: None
 -->
-# Todo Web App Constitution
+
+# Todo Full-Stack Web Application Constitution
 
 ## Core Principles
 
-### I. Correctness & Quality (NON-NEGOTIABLE)
-Correctness-first behavior in both backend and frontend; All API behavior must be deterministic and documented; All basic Todo features must function end-to-end.
-<!-- Example: All API behavior must be deterministic and documented; Clear loading, error, and empty states in UI; Backend verifies identity independently of frontend -->
+### I. Tool-Driven AI Behavior
+AI agents must never access the database directly. All data operations must be performed through MCP tools. This ensures centralized control, auditability, and consistent business logic enforcement. Agents are responsible for reasoning and decision-making, while tools handle execution.
 
-### II. Security & Isolation (NON-NEGOTIABLE)
-Security-by-design with strict user isolation; No cross-user data access under any condition; Authentication must be stateless and token-based (JWT).
-<!-- Example: Authorization must be enforced on every data operation; Users may only read or mutate their own tasks; Database queries must always filter by authenticated user ID; No implicit trust in URL parameters -->
+### II. MCP as Single Execution Layer
+The MCP server serves as the single source of truth for all task operations. All task-related actions (create, read, update, delete) must flow through MCP tools. This creates a clean separation between AI reasoning and system execution, enabling better monitoring, logging, and security controls.
 
-### III. Spec-Driven Development (NON-NEGOTIABLE)
-All code must be generated from specifications; Any change requires spec updates, not manual code edits; Traceable requirements from spec to code.
-<!-- Example: All features must map directly to an explicit requirement; Spec-driven workflow enforced across all layers (frontend, backend, database) -->
+### III. Stateless MCP Tools with Database-Backed State
+MCP tools must remain stateless, with all state persisted in the database. This ensures system reliability, scalability, and resilience to server restarts. Each tool invocation must be self-contained and not rely on in-memory state from previous invocations.
 
-### IV. Clear Separation of Concerns
-Strict separation between Frontend (Next.js), Backend (FastAPI), Authentication (Better Auth), and Data (Neon Postgres); No leaky abstractions.
-<!-- Example: Frontend must only consume authenticated APIs; Authentication logic must not rely on backend sessions; Environment secrets must not be hard-coded -->
+### IV. Clear Separation Between Reasoning and Execution
+There must be a strict separation between AI reasoning (handled by the agent) and execution (handled by MCP tools). The AI agent determines what actions to take based on user input and context, while MCP tools execute those actions reliably and securely.
 
-### V. Production-Grade Architecture
-System must be deployable, scalable, and suitable for real users; No mock or in-memory storage for final implementation.
-<!-- Example: Responsive, mobile-first UI; Accessible components; Centralized API client; Persistent storage in Neon Serverless PostgreSQL -->
+### V. Deterministic and Auditable Operations
+All task operations must be deterministic and fully auditable. Each operation must be logged with sufficient context to reproduce or verify the action. This enables debugging, compliance, and system reliability.
 
-### VI. AI Agent Principles (NON-NEGOTIABLE)
-AI-powered chatbot must be stateless, auditable, and tool-driven; All todo operations must be performed through explicit MCP tools only; No hallucinations or autonomous actions outside defined tools; AI agents cannot access DB directly.
-<!-- Example: Chat interface must persist all conversations and messages; AI must confirm critical actions before execution; Agent must follow strict intent inference without making assumptions -->
+### VI. Spec-Driven Development (NON-NEGOTIABLE)
+All features must begin with a well-defined specification before implementation. Specifications must include user stories, acceptance criteria, and test scenarios. Implementation must strictly follow the specification, with changes to the spec required for any deviations.
 
-## Project Scope
+## Additional Constraints
 
-**Domain**: Multi-user, Full-Stack Todo Web Application with AI Chat Interface
-**Tech Stack**: Next.js 16+ (App Router), Python FastAPI, SQLModel, Neon Serverless PostgreSQL, Better Auth, OpenAI Agents SDK, ChatKit, Official MCP SDK
-**Boundaries**:
-- RESTful API design following HTTP semantics
-- Fixed technology stack (no substitutions)
-- No in-memory storage (persistence required)
-- Stateless authentication (JWT)
-- Stateless backend (no in-memory chat state)
-- AI agent uses only predefined MCP tools
-- MCP tools are the single mutation layer
-- Stateful conversations stored in database
-- No voice input/output, streaming responses, or multi-agent collaboration
+### Technology Stack Requirements
+- MCP Server: Official MCP SDK only
+- Backend: Python FastAPI
+- AI Framework: OpenAI Agents SDK
+- ORM: SQLModel
+- Database: Neon Serverless PostgreSQL
+- Authentication: Better Auth (JWT)
+
+### Security Requirements
+- user_id must be passed explicitly to every tool
+- Task ownership enforced at tool level
+- Unauthorized access must fail safely
+- JWT validation handled before agent execution
+
+### Performance Standards
+- Tool response times under 2 seconds for 95% of requests
+- System must handle 1000 concurrent users
+- Database queries must be optimized with proper indexing
 
 ## Development Workflow
 
-1. **Spec-First**: Update `/specs` definitions before touching code.
-2. **Strict Isolation**: Ensure every feature works for multi-user scenarios immediately.
-3. **Full-Stack Integration**: Frontend, Backend, Authentication, and Chat Interface must integrate correctly; no mocked layers in final PRs.
-4. **Security Check**: Verify "User A cannot see User B's data" for every change.
-5. **AI Compliance**: Verify all chatbot actions use MCP tools without hallucination; maintain audit trail of all operations.
-6. **MCP Compliance**: Verify AI agents only use MCP tools for database operations; no direct DB access allowed.
-7. **Stateless Verification**: Verify backend holds no in-memory chat state; conversations resume after server restart.
+### Code Review Requirements
+- All pull requests must include specification reference
+- MCP tool changes require security review
+- AI integration changes require test coverage verification
+- Database schema changes require migration plan
+
+### Testing Gates
+- Unit tests for all MCP tools (90%+ coverage)
+- Integration tests for AI-MCP interactions
+- End-to-end tests for complete user workflows
+- Security tests for authentication and authorization
+
+### Deployment Approval Process
+- Automated tests must pass
+- Performance benchmarks met
+- Security scan clear
+- Manual QA sign-off for user-facing changes
 
 ## Governance
 
-All code changes must comply with this constitution. Amendments require documentation and approval. Phase III constraints (AI Chat Interface, MCP Tools, Conversation Persistence, Stateless Backend) strictly supersede previous rules when conflicting. All chatbot interactions must be stateless on the backend but maintain DB-backed history. No manual coding allowed - Agentic Dev Stack workflow only.
+The constitution supersedes all other development practices. Amendments require formal documentation, team approval, and migration planning. All pull requests and reviews must verify compliance with constitutional principles. Complexity must be justified with clear benefits. Use this constitution for runtime development guidance.
 
-**Version**: 3.0.1 | **Ratified**: 2026-01-09 | **Last Amended**: 2026-02-06
+**Version**: 1.0.0 | **Ratified**: 2026-02-07 | **Last Amended**: 2026-02-07

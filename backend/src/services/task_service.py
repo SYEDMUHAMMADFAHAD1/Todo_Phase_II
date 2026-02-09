@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.src.models.task import Task, TaskCreate, TaskUpdate
+from ..models.task import Task, TaskCreate, TaskUpdate
 
 
 class TaskService:

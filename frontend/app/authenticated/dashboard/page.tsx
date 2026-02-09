@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/auth';
 import { useTodo } from '@/hooks/todo';
 import Sidebar from '@/components/dashboard/Sidebar';
 import Header from '@/components/dashboard/Header';
-import TodoForm from '@/components/todo/TodoForm';
+import TodoFormWithUpdate from '@/components/todo/TodoFormWithUpdate';
 import TodoList from '@/components/todo/TodoList';
 import StatsSection from '@/components/dashboard/StatsSection';
+import FloatingChatButton from '@/components/chat/FloatingChatButton';
+import { useCalendarPicker } from '@/contexts/CalendarPickerContext';
 
 const DashboardPage = () => {
   const { user, isAuthenticated, isLoading, signOut } = useAuth();
@@ -35,20 +38,24 @@ const DashboardPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-950 to-black">
       <div className="flex h-screen overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        
+
         <div className="flex flex-1 flex-col overflow-hidden">
-          <Header 
-            onMenuToggle={() => setSidebarOpen(!sidebarOpen)} 
-            sidebarOpen={sidebarOpen} 
+          <Header
+            onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+            sidebarOpen={sidebarOpen}
           />
-          
+
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
               <div className="mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">Dashboard</h2>
-                <p className="text-slate-400">Manage your tasks efficiently</p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div>
+                    <h2 className="text-3xl font-bold text-white">Dashboard</h2>
+                    <p className="text-slate-400">Manage your tasks efficiently</p>
+                  </div>
+                </div>
               </div>
-              
+
               {todo.error && (
                 <div className="mb-6 rounded-lg bg-rose-900/30 border border-rose-700/50 p-4 backdrop-blur-sm">
                   <div className="flex items-start">
@@ -64,13 +71,16 @@ const DashboardPage = () => {
                   </div>
                 </div>
               )}
-              
+
               <StatsSection todo={todo} />
-              
+
               <div className="mb-8">
-                <TodoForm
-                  onSubmit={async (data) => {
+                <TodoFormWithUpdate
+                  onCreate={async (data) => {
                     await todo.createTodo(data);
+                  }}
+                  onUpdate={async (id, data) => {
+                    await todo.updateTodo(id, data);
                   }}
                   isLoading={todo.loading}
                   onSuccess={() => {
@@ -78,7 +88,7 @@ const DashboardPage = () => {
                   }}
                 />
               </div>
-              
+
               <div>
                 <TodoList todo={todo} />
               </div>
@@ -86,6 +96,9 @@ const DashboardPage = () => {
           </main>
         </div>
       </div>
+      
+      {/* Floating Chat Button */}
+      <FloatingChatButton />
     </div>
   );
 };

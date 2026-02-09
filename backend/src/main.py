@@ -4,9 +4,10 @@ from fastapi.responses import JSONResponse
 import traceback
 import logging
 
-from .api.routers import tasks, auth
-from backend.src.core.config import settings
-from backend.src.core.db import init_db
+from .api.routers import tasks, auth, chat
+from .core.config import settings
+from .core.db import init_db
+from .mcp.server import get_mcp_server
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -55,11 +56,15 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}", tags=["auth"])
 app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}", tags=["tasks"])
+app.include_router(chat.router, prefix=f"{settings.API_V1_STR}", tags=["chat"])
 
 
 @app.on_event("startup")
 async def startup_event():
     await init_db()
+    # Initialize the MCP server
+    mcp_server = get_mcp_server()
+    print("MCP Server initialized and tools registered")
 
 
 @app.get("/health")

@@ -7,7 +7,6 @@ description: "Task list template for feature implementation"
 
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
-**Constitution Compliance**: All tasks must follow Spec-Driven Development, Security-by-Design, and Correctness-First principles as defined in the project constitution
 
 **Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
@@ -211,13 +210,6 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 ---
 
 ## Implementation Strategy
-
-### Constitution Compliance Requirements
-
-1. **Spec-Driven Development**: All code changes must be based on specification updates; no manual coding without spec updates
-2. **Test-First Approach**: Write tests before implementation; ensure tests fail before writing implementation code
-3. **Clean Architecture**: Follow single-responsibility functions with clear naming
-4. **Data Constraints**: No persistence to file system or database; data exists only during runtime
 
 ### MVP First (User Story 1 Only)
 

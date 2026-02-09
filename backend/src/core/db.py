@@ -5,7 +5,9 @@ from sqlalchemy.orm import sessionmaker
 
 from .config import settings
 # Import all models so they're registered with SQLModel.metadata before create_all()
-from ..models import User, Task
+from ..models.task import User, Task
+from ..models.conversation import Conversation
+from ..models.message import Message
 
 # Create Async Engine
 # echo=True can be helpful for debugging SQL queries during development
@@ -25,3 +27,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     )
     async with async_session() as session:
         yield session
+
+
+# Alias for compatibility
+get_db = get_session

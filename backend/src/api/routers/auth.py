@@ -5,11 +5,11 @@ import jwt
 from typing import Optional, Annotated
 from passlib.context import CryptContext
 
-from backend.auth import UserIdentity, get_current_user
-from backend.src.core.config import settings
-from backend.src.core.db import get_session
+from auth import UserIdentity, get_current_user
+from ...core.config import settings
+from ...core.db import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
-from backend.src.models.task import User
+from ...models.task import User
 from sqlalchemy import select
 
 router = APIRouter()

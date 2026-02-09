@@ -1,7 +1,7 @@
-import { useAuthContext } from '@/contexts/AuthContext';
+import { useAuth as useAuthFromContext } from '@/contexts/AuthContext';
 
 export function useAuth() {
-  const auth = useAuthContext();
+  const auth = useAuthFromContext();
   return {
     ...auth,
     isAuthenticated: !!auth.user,

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { useAuthContext } from '@/contexts/AuthContext';
+import { useAuth as useAuthFromContext } from '@/contexts/AuthContext';
 
 export interface Todo {
   id: string;
@@ -10,17 +10,24 @@ export interface Todo {
   user_id: string;
   created_at: string;
   updated_at: string;
+  date_time: string;
+  reminderTriggered?: boolean;
 }
 
 export interface TodoCreateInput {
   title: string;
   description?: string;
+  dateTime: Date;
+  reminderTriggered?: boolean;
 }
 
 export interface TodoUpdateInput {
   title?: string;
   description?: string;
   is_completed?: boolean;
+  dateTime?: Date;
+  date_time?: string; // Allow direct ISO string input
+  reminderTriggered?: boolean;
 }
 
 export interface UseTodoReturn {
@@ -39,7 +46,7 @@ export function useTodo(): UseTodoReturn {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { session, isLoading: authLoading } = useAuthContext(); // Get session and auth loading state
+  const { session, isLoading: authLoading } = useAuthFromContext(); // Get session and auth loading state
 
   const fetchTodos = useCallback(async () => {
     // Wait for auth to be loaded before making requests
@@ -94,8 +101,20 @@ export function useTodo(): UseTodoReturn {
           throw new Error('No active session. Please sign in.');
         }
 
-        console.log('Creating todo with data:', input);
-        const newTodo = await apiClient.post<Todo>('/tasks', input);
+        // Validate the date before sending to backend
+        if (!input.dateTime || isNaN(input.dateTime.getTime())) {
+          throw new Error('Invalid date provided');
+        }
+
+        // Format the date and time for the backend
+        const formattedInput = {
+          ...input,
+          date_time: input.dateTime.toISOString(),
+          reminderTriggered: input.reminderTriggered || false,
+        };
+
+        console.log('Creating todo with data:', formattedInput);
+        const newTodo = await apiClient.post<Todo>('/tasks', formattedInput);
         console.log('Todo created successfully:', newTodo);
         setTodos((prev) => [...prev, newTodo]);
         return newTodo;
@@ -132,7 +151,13 @@ export function useTodo(): UseTodoReturn {
           throw new Error('No active session. Please sign in.');
         }
 
-        const updated = await apiClient.put<Todo>(`/tasks/${id}`, input);
+        // Format date fields before sending to backend
+        const formattedInput = {
+          ...input,
+          date_time: input.dateTime ? new Date(input.dateTime).toISOString() : undefined,
+        };
+
+        const updated = await apiClient.put<Todo>(`/tasks/${id}`, formattedInput);
         setTodos((prev) =>
           prev.map((todo) => (todo.id === id ? updated : todo))
         );
