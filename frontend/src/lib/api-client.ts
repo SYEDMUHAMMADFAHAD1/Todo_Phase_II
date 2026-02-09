@@ -37,7 +37,7 @@ class ApiClient {
     const headers = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
-    };
+    } as Record<string, string>;
 
     // Add auth token if available
     const token = await getAuthToken();

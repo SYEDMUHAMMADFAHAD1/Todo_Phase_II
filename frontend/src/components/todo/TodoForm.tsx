@@ -14,6 +14,12 @@ interface TodoFormProps {
 export default function TodoForm({ onSubmit, isLoading = false, onSuccess }: TodoFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [dateTime, setDateTime] = useState(() => {
+    // Initialize to current time + 1 hour as default
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    return now.toISOString().slice(0, 16);
+  });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'success' as 'success' | 'error', isVisible: false });
@@ -38,12 +44,26 @@ export default function TodoForm({ onSubmit, isLoading = false, onSuccess }: Tod
 
     try {
       setIsSubmitting(true);
+      
+      // Validate the date before submitting
+      const dateObj = new Date(dateTime);
+      if (isNaN(dateObj.getTime())) {
+        setError('Invalid date selected');
+        showToast('Please select a valid date and time', 'error');
+        return;
+      }
+      
       await onSubmit({
         title: title.trim(),
         description: description.trim() || undefined,
+        dateTime: dateObj,
       });
       setTitle('');
       setDescription('');
+      // Reset to current time + 1 hour as default
+      const now = new Date();
+      now.setHours(now.getHours() + 1);
+      setDateTime(now.toISOString().slice(0, 16));
       onSuccess?.();
       showToast('Task created successfully!', 'success');
     } catch (err) {
@@ -115,6 +135,34 @@ export default function TodoForm({ onSubmit, isLoading = false, onSuccess }: Tod
             disabled={isSubmitting || isLoading}
             className="flex min-h-[100px] w-full rounded-xl border border-slate-600 bg-slate-800/50 text-sm ring-offset-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 text-white p-4 transition-all duration-200 resize-none"
           />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="dateTime" className="block text-sm font-medium text-slate-300">
+            Due Date & Time
+          </label>
+          <div className="relative">
+            <input
+              id="dateTime"
+              name="dateTime"
+              type="datetime-local"
+              value={dateTime}
+              onChange={(e) => setDateTime(e.target.value)}
+              disabled={isSubmitting || isLoading}
+              onKeyDown={(e) => {
+                // Prevent all keyboard input to force using the date/time picker
+                if(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab'].indexOf(e.key) === -1) {
+                  e.preventDefault();
+                }
+              }}
+              className="w-full px-4 py-3.5 text-sm rounded-xl border border-slate-600 bg-slate-800/50 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 pl-12"
+            />
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         <motion.button
