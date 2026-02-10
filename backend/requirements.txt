@@ -1,16 +1,25 @@
+# Core
 fastapi
-uvicorn
+uvicorn[standard]
 sqlmodel
 asyncpg
 aiosqlite
 python-dotenv
+pydantic-settings
+
+# Auth
 pyjwt
-cryptography
 passlib[bcrypt]
 email-validator
-pydantic-settings
+
+# AI Chat
+openai
+
+# MCP
 mcp
+
+# Testing (dev only)
 pytest
 pytest-cov
-httpx
 pytest-asyncio
+httpx
