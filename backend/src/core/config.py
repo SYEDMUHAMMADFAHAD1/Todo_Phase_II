@@ -6,10 +6,10 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
 
     # Database
-    DATABASE_URL: str
+    DATABASE_URL: str = "sqlite+aiosqlite:///./todo_app.db"
 
     # Auth
-    BETTER_AUTH_SECRET: str
+    BETTER_AUTH_SECRET: str = "change-me-set-this-in-railway-env-vars-min-32-chars"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Default to 30 minutes
 
     # OpenAI
