@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import asyncio
 import traceback
 import logging
+from urllib.parse import urlparse
 
 from .api.routers import tasks, auth, chat
 from .core.config import settings
@@ -43,6 +45,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Add CORS middleware BEFORE routes
 # Origins are configurable via CORS_ORIGINS env var (comma-separated)
 cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
+logger.info(f"CORS allowed origins: {cors_origins}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -60,10 +63,34 @@ app.include_router(chat.router, prefix=f"{settings.API_V1_STR}", tags=["chat"])
 
 @app.on_event("startup")
 async def startup_event():
-    await init_db()
+    # Log DATABASE_URL hostname for debugging (never log credentials)
+    try:
+        parsed = urlparse(settings.DATABASE_URL)
+        logger.info(f"DATABASE_URL scheme={parsed.scheme}, host={parsed.hostname}, db={parsed.path}")
+        if parsed.hostname in (None, "host", "localhost") and "asyncpg" in (parsed.scheme or ""):
+            logger.warning(
+                "DATABASE_URL appears to use a placeholder hostname. "
+                "Set a real Neon connection string in Railway environment variables."
+            )
+    except Exception:
+        logger.warning("Could not parse DATABASE_URL for diagnostics")
+
+    # Retry DB init up to 3 times for transient DNS/network failures
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            await init_db()
+            logger.info("Database initialized successfully")
+            break
+        except Exception as e:
+            logger.error(f"Database init attempt {attempt}/{max_retries} failed: {e}")
+            if attempt == max_retries:
+                raise
+            await asyncio.sleep(2 * attempt)
+
     # Initialize the MCP server
     mcp_server = get_mcp_server()
-    print("MCP Server initialized and tools registered")
+    logger.info("MCP Server initialized and tools registered")
 
 
 @app.get("/health")
