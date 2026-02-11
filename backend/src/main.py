@@ -61,32 +61,45 @@ app.include_router(tasks.router, prefix=f"{settings.API_V1_STR}", tags=["tasks"]
 app.include_router(chat.router, prefix=f"{settings.API_V1_STR}", tags=["chat"])
 
 
+db_ready = False
+
+
 @app.on_event("startup")
 async def startup_event():
+    global db_ready
+
     # Log DATABASE_URL hostname for debugging (never log credentials)
     try:
         parsed = urlparse(settings.DATABASE_URL)
         logger.info(f"DATABASE_URL scheme={parsed.scheme}, host={parsed.hostname}, db={parsed.path}")
         if parsed.hostname in (None, "host", "localhost") and "asyncpg" in (parsed.scheme or ""):
-            logger.warning(
-                "DATABASE_URL appears to use a placeholder hostname. "
-                "Set a real Neon connection string in Railway environment variables."
+            logger.error(
+                "DATABASE_URL has a placeholder hostname '%s'. "
+                "Update the DATABASE_URL env var in Railway with your real Neon connection string: "
+                "postgresql+asyncpg://user:pass@ep-xxx.region.aws.neon.tech/dbname?ssl=require",
+                parsed.hostname,
             )
     except Exception:
         logger.warning("Could not parse DATABASE_URL for diagnostics")
 
-    # Retry DB init up to 3 times for transient DNS/network failures
+    # Try DB init with retries — do NOT crash the app if it fails
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
             await init_db()
+            db_ready = True
             logger.info("Database initialized successfully")
             break
         except Exception as e:
             logger.error(f"Database init attempt {attempt}/{max_retries} failed: {e}")
-            if attempt == max_retries:
-                raise
-            await asyncio.sleep(2 * attempt)
+            if attempt < max_retries:
+                await asyncio.sleep(2 * attempt)
+
+    if not db_ready:
+        logger.error(
+            "DATABASE CONNECTION FAILED — app will start but API routes will not work. "
+            "Fix DATABASE_URL in Railway environment variables and redeploy."
+        )
 
     # Initialize the MCP server
     mcp_server = get_mcp_server()
@@ -95,4 +108,7 @@ async def startup_event():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok" if db_ready else "degraded",
+        "database": "connected" if db_ready else "unavailable",
+    }
