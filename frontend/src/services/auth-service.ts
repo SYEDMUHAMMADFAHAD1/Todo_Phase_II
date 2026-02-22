@@ -5,12 +5,15 @@ import { sessionStorage } from '@/lib/session';
 // Remove /api suffix since we'll add it with basePath
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
+// Ensure no trailing slash
+const cleanBaseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL;
+
 export class AuthService {
   private basePath = '/auth';
 
   async signIn(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const url = `${API_BASE_URL}${this.basePath}/signin`;
+      const url = `${cleanBaseUrl}${this.basePath}/signin`;
       console.log('🔐 Signin request:', { url, email: credentials.email });
 
       const response = await fetch(url, {
@@ -52,7 +55,7 @@ export class AuthService {
 
   async signUp(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
-      const url = `${API_BASE_URL}${this.basePath}/signup`;
+      const url = `${cleanBaseUrl}${this.basePath}/signup`;
       console.log('🔐 Signup request:', { url, email: credentials.email });
 
       const response = await fetch(url, {
@@ -94,7 +97,7 @@ export class AuthService {
 
   async signOut(): Promise<void> {
     try {
-      await fetch(`${API_BASE_URL}${this.basePath}/signout`, {
+      await fetch(`${cleanBaseUrl}${this.basePath}/signout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +125,7 @@ export class AuthService {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}${this.basePath}/session`, {
+      const response = await fetch(`${cleanBaseUrl}${this.basePath}/session`, {
         method: 'GET',
         headers,
       });

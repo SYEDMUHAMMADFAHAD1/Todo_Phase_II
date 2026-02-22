@@ -22,7 +22,9 @@ class ApiClient {
     if (process.env.NEXT_PUBLIC_USE_REWRITE_PROXY === 'true') {
       this.baseUrl = '';
     } else {
-      this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+      // Use NEXT_PUBLIC_API_URL and strip the /api suffix for the base URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      this.baseUrl = apiUrl.replace(/\/api$/, '') || 'http://localhost:8000';
     }
   }
 

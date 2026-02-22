@@ -7,7 +7,9 @@ class BetterAuthClient {
 
   constructor() {
     // Use the same base URL as the API client for consistency
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:8000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    // Remove /api suffix to get base URL
+    this.baseUrl = apiUrl.replace(/\/api$/, '') || 'http://localhost:8000';
   }
 
   async getSession() {

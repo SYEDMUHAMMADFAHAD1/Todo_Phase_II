@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     OPENAI_TEMPERATURE: float = 0.7
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,https://todo-phase-ii-x5q8.vercel.app"
 
     model_config = SettingsConfigDict(
         env_file=".env", env_ignore_empty=True, extra="ignore"
