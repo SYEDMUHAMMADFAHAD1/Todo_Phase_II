@@ -10,10 +10,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/. .
 
+# Copy and set up entrypoint script
+COPY backend/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Railway sets PORT automatically; do NOT set a default here
-# The run_server.py reads PORT from environment at runtime
 EXPOSE 8000
 
-# Use shell form so $PORT expands properly, or use Python script that reads env var
-# Using Python script approach (run_server.py handles PORT correctly)
-CMD python run_server.py
+# Use entrypoint script to ensure PORT env var is available
+ENTRYPOINT ["/entrypoint.sh"]
