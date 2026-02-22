@@ -42,7 +42,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": f"Internal server error: {str(exc)}"}
     )
 
-# Add CORS middleware BEFORE routes
+# Add CORS middleware - must be before routes
 # Origins are configurable via CORS_ORIGINS env var (comma-separated)
 cors_origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
 logger.info(f"CORS allowed origins: {cors_origins}")
@@ -51,9 +51,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Authorization", "Content-Type"],
+    expose_headers=["*"],
 )
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}", tags=["auth"])
